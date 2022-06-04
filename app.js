@@ -1,5 +1,6 @@
 import "dotenv/config.js";
 import { Client, Intents } from 'discord.js';
+import { DateTime } from 'luxon';
 import paras from "./paras.js";
 
 const client = new Client({
@@ -51,7 +52,7 @@ function sendMessageToChannel(args) {
 function errorLog(e) {
     try {
         const channel = client.channels.cache.get(paras.global.errorLogchannelId);
-        channel.send(`message: \`${e.message}\`` + "\n" + "stack:```" + e.stack + "```");
+        channel.send(`[${DateTime.now().toFormat("yyyy/MM/dd HH:mm:ss")}]\n` + `message: \`${e.message}\`` + "\n" + "stack:```" + e.stack + "```");
     }
     catch {
         console.error(e);
