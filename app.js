@@ -3,10 +3,15 @@ import { Client, Intents } from 'discord.js';
 import { DateTime } from 'luxon';
 import paras from "./paras.js";
 
+const isDebug = process.env.isDebug === "true"
+
 const client = new Client({
     intents: [
         Intents.FLAGS.GUILDS,
-        Intents.FLAGS.GUILD_MESSAGES]
+        Intents.FLAGS.GUILD_MESSAGES,
+        Intents.FLAGS.GUILD_MESSAGE_REACTIONS
+    ],
+    partials: ['MESSAGE', 'CHANNEL', 'REACTION']
 });
 
 client.once('ready', () => {
@@ -14,18 +19,32 @@ client.once('ready', () => {
 });
 
 
-//當 Bot 接收到訊息時的事件
-client.on('messageCreate', msg => {
-    if (!msg.content?.startsWith("run ")) return;
+if (isDebug) {
+    //當 Bot 接收到訊息時的事件
+    client.on('messageCreate', msg => {
+        if (!msg.content?.startsWith("run ")) return;
 
-    const commend = msg.content.split(" ")[1];
-    const args = msg.content.split(" ").filter((_, i) => i > 1)
+        const commend = msg.content.split(" ")[1];
+        const args = msg.content.split(" ").filter((_, i) => i > 1)
 
-    switch (commend) {
-        case "sendMessageToChannel": return sendMessageToChannel(args);
+        switch (commend) {
+            case "sendMessageToChannel": return sendMessageToChannel(args);
+            case "addUserWithRole": return addRole(msg.guild.members.cache.find(member => member.id === args[0]), args[1]);
+            default: break;
+        }
+    });
+}
+
+client.on('messageReactionAdd', (reaction, user) => {
+    if(reaction.message.id !== process.env.Eroinn_Message_To_Check_Join) return;
+    switch (reaction.emoji.name) {
+        case '❤️':
+            return addRole(reaction.message.guild.members.cache.find(member => member.id === user.id), process.env.Eroinn_Role_CanPornId);
         default: break;
     }
 });
+
+
 
 
 // Login to Discord with your client's token
@@ -43,6 +62,10 @@ function sendMessageToChannel(args) {
     catch (e) {
         errorLog(e);
     }
+}
+
+function addRole(member, roleId) {
+    member.roles.add(roleId);
 }
 
 /**
