@@ -8,7 +8,9 @@ const client = new Client({
     intents: [
         Intents.FLAGS.GUILDS,
         Intents.FLAGS.GUILD_MESSAGES,
-        Intents.FLAGS.GUILD_MESSAGE_REACTIONS
+        Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+        Intents.FLAGS.GUILD_PRESENCES,
+        Intents.FLAGS.GUILD_MEMBERS,
     ],
     partials: ['MESSAGE', 'CHANNEL', 'REACTION']
 });
@@ -19,27 +21,64 @@ client.once('ready', () => {
 
 
 if (isDebug) {
-    //當 Bot 接收到訊息時的事件
-    client.on('messageCreate', msg => {
-        if (!msg.content?.startsWith("run ")) return;
+    client.on("messageCreate", async msg => {
+        try {
+            if (!msg.content?.startsWith("run ")) return;
 
-        const commend = msg.content.split(" ")[1];
-        const args = msg.content.split(" ").filter((_, i) => i > 1)
+            const commend = msg.content.split(" ")[1];
+            const args = msg.content.split(" ").filter((_, i) => i > 1)
 
-        switch (commend) {
-            case "sendMessageToChannel": return sendMessageToChannel(args);
-            case "addUserWithRole": return addRole(msg.guild.members.cache.find(member => member.id === args[0]), args[1]);
-            default: break;
+            switch (commend) {
+                case "sendMessageToChannel": return sendMessageToChannel(args[0], args.filter((_, i) => i > 0).reduce((a, c) => `${a}${c}`, ""));
+                case "addUserWithRole": return addRole(msg.guild.members.cache.find(member => member.id === args[0]), args[1]);
+                default: return Promise.reject;
+            }
+        }
+        catch (e) {
+            return errorLog(e);
         }
     });
 }
 
-client.on('messageReactionAdd', (reaction, user) => {
-    if (reaction.message.id !== process.env.Eroinn_Message_To_Check_Join) return;
-    switch (reaction.emoji.name) {
-        case '❤️':
-            return addRole(reaction.message.guild.members.cache.find(member => member.id === user.id), process.env.Eroinn_Role_CanPornId);
-        default: break;
+
+
+client.on('guildMemberAdd', async member => {
+    try {
+        return sendMessageToChannel(
+            process.env.Eroinn_Channel_WelcomeChannelId,
+            `[${getNowTime()}] 歡迎 <@${member.user.id}> 來到色色專區😳，請先至 <#${process.env.Eroinn_Channel_CheckJoinChannelId}> ❤️，才可以開始色色😳`);
+    }
+    catch (e) {
+        errorLog(e);
+    }
+});
+
+
+client.on('guildMemberRemove', async member => {
+    try {
+        return sendMessageToChannel(
+            process.env.Eroinn_Channel_WelcomeChannelId,
+            `[${getNowTime()}] <@${member.user.id}> 離開了我們😭😭😭`);
+    }
+    catch (e) {
+        errorLog(e);
+    }
+});
+
+
+client.on('messageReactionAdd', async (reaction, user) => {
+    try {
+        if (reaction.message.id !== process.env.Eroinn_Message_To_Check_Join) return Promise.resolve;
+        switch (reaction.emoji.name) {
+            case '❤️':
+                return addRole(
+                    reaction.message.guild.members.cache.find(member => member.id === user.id),
+                    process.env.Eroinn_Role_CanPornId);
+            default: return Promise.reject;
+        }
+
+    } catch (e) {
+        errorLog(e);
     }
 });
 
@@ -50,22 +89,14 @@ client.on('messageReactionAdd', (reaction, user) => {
 client.login(process.env.myToken);
 
 
-function sendMessageToChannel(args) {
-    try {
-        const channelId = args[0];
-        const content = args.filter((_, i) => i > 0).reduce((a, c) => `${a}${c}`, "");
-
-        const channel = client.channels.cache.get(channelId);
-        if (!channel) throw new Error(`no channel:${channelId}!`);
-        channel.send(content);
-    }
-    catch (e) {
-        errorLog(e);
-    }
+function sendMessageToChannel(channelId, content) {
+    const channel = client.channels.cache.get(channelId);
+    if (!channel) throw new Error(`no channel:${channelId}!`);
+    return channel.send(content);
 }
 
 function addRole(member, roleId) {
-    member.roles.add(roleId);
+    return member.roles.add(roleId);
 }
 
 /**
@@ -75,9 +106,18 @@ function addRole(member, roleId) {
 function errorLog(e) {
     try {
         const channel = client.channels.cache.get(process.env.ErrorLog_ChannelId);
-        channel.send(`[${DateTime.now().toFormat("yyyy/MM/dd HH:mm:ss")}]\n` + `message: \`${e.message}\`` + "\n" + "stack:```" + e.stack + "```");
+        return channel.send(`[${getNowTime}]\n` + `message: \`${e.message}\`` + "\n" + "stack:```" + e.stack + "```");
     }
     catch {
         console.error(e);
+        return Promise.resolve;
     }
+}
+
+/**
+ * 
+ * @returns string yyyy/MM/dd HH:mm:ss
+ */
+function getNowTime() {
+    return DateTime.now().toFormat("yyyy/MM/dd HH:mm:ss");
 }
