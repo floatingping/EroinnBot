@@ -1,5 +1,5 @@
 require('dotenv').config();
-
+const paras = require("./paras");
 
 const { Client, Intents } = require('discord.js');
 
@@ -33,9 +33,28 @@ client.login(process.env.myToken);
 
 
 function sendMessageToChannel(args) {
-    const channelId = args[0];
-    const content = args.filter((_, i) => i > 0).reduce((a, c) => `${a}${c}`, "");
+    try {
+        const channelId = args[0];
+        const content = args.filter((_, i) => i > 0).reduce((a, c) => `${a}${c}`, "");
 
-    const channel = client.channels.cache.get(channelId);
-    channel.send(content);
+        const channel = client.channels.cache.get(channelId);
+        channel.send(content);
+    }
+    catch (e) {
+        errorLog(e);
+    }
+}
+
+/**
+ * 
+ * @param {Error} e 
+ */
+function errorLog(e) {
+    try {
+        const channel = client.channels.cache.get(paras.global.errorLogchannelId);
+        channel.send(`message: \`${e.message}\`` + "\n" + "stack:```" + e.stack + "```");
+    }
+    catch {
+        console.error(e);
+    }
 }
