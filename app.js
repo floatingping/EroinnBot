@@ -1,7 +1,6 @@
 import "dotenv/config.js";
 import { Client, Intents } from 'discord.js';
 import { DateTime } from 'luxon';
-import paras from "./paras.js";
 
 const isDebug = process.env.isDebug === "true"
 
@@ -36,7 +35,7 @@ if (isDebug) {
 }
 
 client.on('messageReactionAdd', (reaction, user) => {
-    if(reaction.message.id !== process.env.Eroinn_Message_To_Check_Join) return;
+    if (reaction.message.id !== process.env.Eroinn_Message_To_Check_Join) return;
     switch (reaction.emoji.name) {
         case '❤️':
             return addRole(reaction.message.guild.members.cache.find(member => member.id === user.id), process.env.Eroinn_Role_CanPornId);
@@ -57,6 +56,7 @@ function sendMessageToChannel(args) {
         const content = args.filter((_, i) => i > 0).reduce((a, c) => `${a}${c}`, "");
 
         const channel = client.channels.cache.get(channelId);
+        if (!channel) throw new Error(`no channel:${channelId}!`);
         channel.send(content);
     }
     catch (e) {
@@ -74,7 +74,7 @@ function addRole(member, roleId) {
  */
 function errorLog(e) {
     try {
-        const channel = client.channels.cache.get(paras.global.errorLogchannelId);
+        const channel = client.channels.cache.get(process.env.ErrorLog_ChannelId);
         channel.send(`[${DateTime.now().toFormat("yyyy/MM/dd HH:mm:ss")}]\n` + `message: \`${e.message}\`` + "\n" + "stack:```" + e.stack + "```");
     }
     catch {
