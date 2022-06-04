@@ -1,7 +1,6 @@
-require('dotenv').config();
-const paras = require("./paras");
-
-const { Client, Intents } = require('discord.js');
+import "dotenv/config.js";
+import { Client, Intents } from 'discord.js';
+import paras from "./paras.js";
 
 const client = new Client({
     intents: [

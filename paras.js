@@ -3,4 +3,4 @@ const paras = {
         errorLogchannelId : "982577236848812032"
     }
 };
-module.exports = paras;
+export default paras;
