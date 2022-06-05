@@ -54,11 +54,13 @@ client.on('guildMemberAdd', member => {
 });
 
 
-client.on('guildMemberRemove', member => {
+client.on('guildMemberRemove', async member => {
     try {
-        return sendMessageToChannel(
+        await sendMessageToChannel(
             process.env.Eroinn_Channel_WelcomeChannelId,
             `[${getNowTime()}] <@${member.user.id}> 離開了我們😭😭😭`);
+
+        await removeJoinReactionAsync(member.user.id);
     }
     catch (e) {
         return errorLog(e);
@@ -125,4 +127,15 @@ function errorLog(e) {
  */
 function getNowTime() {
     return DateTime.now().toFormat("yyyy/MM/dd HH:mm:ss");
+}
+
+async function removeJoinReactionAsync(userId) {
+    try {
+        const channel = await client.channels.fetch(process.env.Eroinn_Channel_CheckJoinChannelId);
+        const msg = await channel.messages.fetch(process.env.Eroinn_Message_To_Check_Join);
+        await msg.reactions.cache.find(r => r.emoji.name === "❤️")?.users.remove(userId);
+    }
+    catch (e) {
+        console.error(e);
+    }
 }
