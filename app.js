@@ -21,49 +21,53 @@ client.once('ready', () => {
 
 
 if (isDebug) {
-    client.on("messageCreate", msg => {
+    client.on("messageCreate", async msg => {
         try {
-            if (!msg.content?.startsWith("run ")) return Promise.resolve;
+            if (!msg.content?.startsWith("run ")) return;
 
             const commend = msg.content.split(" ")[1];
             const args = msg.content.split(" ").filter((_, i) => i > 1)
 
             switch (commend) {
-                case "sendMessageToChannel": return sendMessageToChannel(args[0], args.filter((_, i) => i > 0).reduce((a, c) => `${a}${c}`, ""));
-                case "addUserWithRole": return addRole(msg.guild.members.cache.find(member => member.id === args[0]), args[1]);
-                default: return Promise.reject;
+                case "sendMessageToChannel":
+                    await sendMessageToChannelAsync(args[0], args.filter((_, i) => i > 0).reduce((a, c) => `${a}${c}`, ""));
+                    return;
+                case "addUserWithRole":
+                    await addRoleAsync(msg.guild.members.cache.find(member => member.id === args[0]), args[1]);
+                    return;
+                default: return;
             }
         }
         catch (e) {
-            return errorLog(e);
+            await errorLogAsync(e);
         }
     });
 }
 
 
 
-client.on('guildMemberAdd', member => {
+client.on('guildMemberAdd', async member => {
     try {
-        return sendMessageToChannel(
+        await sendMessageToChannelAsync(
             process.env.Eroinn_Channel_WelcomeChannelId,
             `[${getNowTime()}] 歡迎 <@${member.user.id}> 來到色色專區😳，請先至 <#${process.env.Eroinn_Channel_CheckJoinChannelId}> ❤️，才可以開始色色😳`);
     }
     catch (e) {
-        return errorLog(e);
+        await errorLogAsync(e);
     }
 });
 
 
 client.on('guildMemberRemove', async member => {
     try {
-        await sendMessageToChannel(
+        await sendMessageToChannelAsync(
             process.env.Eroinn_Channel_WelcomeChannelId,
             `[${getNowTime()}] <@${member.user.id}> 離開了我們😭😭😭`);
 
         await removeJoinReactionAsync(member.user.id);
     }
     catch (e) {
-        return errorLog(e);
+        await errorLogAsync(e);
     }
 });
 
@@ -73,19 +77,19 @@ client.on('messageReactionAdd', async (reaction, user) => {
         if (reaction.message.id !== process.env.Eroinn_Message_To_Check_Join) return;
 
         switch (reaction.emoji.name) {
-            case '❤️':
-                await sendMessageToChannel(
+            case "❤️":
+                await sendMessageToChannelAsync(
                     process.env.Eroinn_Channel_WelcomeChannelId,
                     `[${getNowTime()}] <@${user.id}> 可以開始色色了❤️❤️❤️`);
-                await addRole(
+                await addRoleAsync(
                     reaction.message.guild.members.cache.find(member => member.id === user.id),
                     process.env.Eroinn_Role_CanPornId);
-                break;
+                return;
             default: return;
         }
 
     } catch (e) {
-        await errorLog(e);
+        await errorLogAsync(e);
     }
 });
 
@@ -96,28 +100,37 @@ client.on('messageReactionAdd', async (reaction, user) => {
 client.login(process.env.myToken);
 
 
-function sendMessageToChannel(channelId, content) {
-    const channel = client.channels.cache.get(channelId);
-    if (!channel) throw new Error(`no channel:${channelId}!`);
-    return channel.send(content);
+async function sendMessageToChannelAsync(channelId, content) {
+    try {
+        const channel = client.channels.cache.get(channelId);
+        if (!channel) throw new Error(`no channel:${channelId}!`);
+        await channel.send(content);
+    }
+    catch (e) {
+        await errorLogAsync(e);
+    }
 }
 
-function addRole(member, roleId) {
-    return member.roles.add(roleId);
+async function addRoleAsync(member, roleId) {
+    try {
+        await member.roles.add(roleId);
+    }
+    catch (e) {
+        await errorLogAsync(e);
+    }
 }
 
 /**
  * 
  * @param {Error} e 
  */
-function errorLog(e) {
+async function errorLogAsync(e) {
     try {
         const channel = client.channels.cache.get(process.env.ErrorLog_ChannelId);
-        return channel.send(`[${getNowTime}]\n` + `message: \`${e.message}\`` + "\n" + "stack:```" + e.stack + "```");
+        await channel.send(`[${getNowTime}]\n` + `message: \`${e.message}\`` + "\n" + "stack:```" + e.stack + "```");
     }
     catch {
         console.error(e);
-        return Promise.resolve;
     }
 }
 
@@ -136,6 +149,6 @@ async function removeJoinReactionAsync(userId) {
         await msg.reactions.cache.find(r => r.emoji.name === "❤️")?.users.remove(userId);
     }
     catch (e) {
-        console.error(e);
+        await errorLogAsync(e);
     }
 }
