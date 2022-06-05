@@ -21,9 +21,9 @@ client.once('ready', () => {
 
 
 if (isDebug) {
-    client.on("messageCreate", async msg => {
+    client.on("messageCreate", msg => {
         try {
-            if (!msg.content?.startsWith("run ")) return;
+            if (!msg.content?.startsWith("run ")) return Promise.resolve;
 
             const commend = msg.content.split(" ")[1];
             const args = msg.content.split(" ").filter((_, i) => i > 1)
@@ -42,31 +42,31 @@ if (isDebug) {
 
 
 
-client.on('guildMemberAdd', async member => {
+client.on('guildMemberAdd', member => {
     try {
         return sendMessageToChannel(
             process.env.Eroinn_Channel_WelcomeChannelId,
             `[${getNowTime()}] 歡迎 <@${member.user.id}> 來到色色專區😳，請先至 <#${process.env.Eroinn_Channel_CheckJoinChannelId}> ❤️，才可以開始色色😳`);
     }
     catch (e) {
-        errorLog(e);
+        return errorLog(e);
     }
 });
 
 
-client.on('guildMemberRemove', async member => {
+client.on('guildMemberRemove', member => {
     try {
         return sendMessageToChannel(
             process.env.Eroinn_Channel_WelcomeChannelId,
             `[${getNowTime()}] <@${member.user.id}> 離開了我們😭😭😭`);
     }
     catch (e) {
-        errorLog(e);
+        return errorLog(e);
     }
 });
 
 
-client.on('messageReactionAdd', async (reaction, user) => {
+client.on('messageReactionAdd', (reaction, user) => {
     try {
         if (reaction.message.id !== process.env.Eroinn_Message_To_Check_Join) return Promise.resolve;
         switch (reaction.emoji.name) {
@@ -78,7 +78,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
         }
 
     } catch (e) {
-        errorLog(e);
+        return errorLog(e);
     }
 });
 
