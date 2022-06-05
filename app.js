@@ -139,7 +139,7 @@ async function errorLogAsync(e) {
  * @returns string yyyy/MM/dd HH:mm:ss
  */
 function getNowTime() {
-    return DateTime.now().toFormat("yyyy/MM/dd HH:mm:ss");
+    return DateTime.utc().plus({ hours: 8 }).toFormat("yyyy/MM/dd HH:mm:ss");
 }
 
 async function removeJoinReactionAsync(userId) {
