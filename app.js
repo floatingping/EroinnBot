@@ -66,19 +66,24 @@ client.on('guildMemberRemove', member => {
 });
 
 
-client.on('messageReactionAdd', (reaction, user) => {
+client.on('messageReactionAdd', async (reaction, user) => {
     try {
-        if (reaction.message.id !== process.env.Eroinn_Message_To_Check_Join) return Promise.resolve;
+        if (reaction.message.id !== process.env.Eroinn_Message_To_Check_Join) return;
+
         switch (reaction.emoji.name) {
             case '❤️':
-                return addRole(
+                await sendMessageToChannel(
+                    process.env.Eroinn_Channel_WelcomeChannelId,
+                    `[${getNowTime()}] <@${user.id}> 可以開始色色了❤️❤️❤️`);
+                await addRole(
                     reaction.message.guild.members.cache.find(member => member.id === user.id),
                     process.env.Eroinn_Role_CanPornId);
-            default: return Promise.reject;
+                break;
+            default: return;
         }
 
     } catch (e) {
-        return errorLog(e);
+        await errorLog(e);
     }
 });
 
